@@ -11,9 +11,6 @@ class Measurement:
         self.value = value
         self.unit = unit
 
-
-
-# TODO: Add your own classes here!
 class Floor:
     def __init__(self, level):
         self.level = level
@@ -59,11 +56,6 @@ class Sensor(Device):
     
     def get_measurements(self):
         return self.measurements
-    
-    def last_measurements(self): #TODO
-        if self.measurements:
-            return self.measurements[-1]
-        return None
     
     def last_measurement(self):
         return Measurement(
@@ -188,5 +180,3 @@ class SmartHouse:
             if device.id == device_id:
                 return device
         return None
-                
-

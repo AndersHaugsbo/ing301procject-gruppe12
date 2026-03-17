@@ -6,12 +6,14 @@ DEMO_HOUSE = SmartHouse()
 ground_floor = DEMO_HOUSE.register_floor(1)
 second_floor = DEMO_HOUSE.register_floor(2)
 
+# Etasje 1
 entrance = DEMO_HOUSE.register_room(ground_floor, 13.5, "Entrance")
 living = DEMO_HOUSE.register_room(ground_floor, 39.75, "LivingRoom/Kitchen")
 bath1 = DEMO_HOUSE.register_room(ground_floor, 6.3, "Bathroom 1")
 guest1 = DEMO_HOUSE.register_room(ground_floor, 8, "Guest Room 1")
 garage = DEMO_HOUSE.register_room(ground_floor, 19, "Garage")
 
+# Etasje 2
 master = DEMO_HOUSE.register_room(second_floor, 17, "Master Bedroom")
 guest3 = DEMO_HOUSE.register_room(second_floor, 10, "Guest Room 3")
 office = DEMO_HOUSE.register_room(second_floor, 11.75, "Office")
@@ -19,7 +21,6 @@ bath2 = DEMO_HOUSE.register_room(second_floor, 9.25, "Bathroom 2")
 guest2 = DEMO_HOUSE.register_room(second_floor, 8, "Guest Room 2")
 hallway = DEMO_HOUSE.register_room(second_floor, 10, "Hallway")
 dresser = DEMO_HOUSE.register_room(second_floor, 4, "Dressing Room")
-# TODO: continue registering the remaining floor, rooms and devices
 
 # Etasje 1
 d1 = Actuator("4d5f1ac6-906a-4fd1-b4bf-3a0671e4c4f1", "Smart Lock", "MythicalTech", "Guardian Lock 7000")
