@@ -11,6 +11,24 @@ class Measurement:
 
 
 # TODO: Add your own classes here!
+class Floor:
+    def __init__(self, level):
+        self.level = level
+        self.rooms = []
+    
+    def get_area(self):
+        total_area = 0
+        for room in self.rooms:
+            total_area += room.size
+        return total_area
+    
+class Room:
+    def __init__(self, floor, size, name=None):
+        self.floor = floor
+        self.size = size
+        self.room_name = name
+        self.devices = []
+
 
 
 class SmartHouse:
