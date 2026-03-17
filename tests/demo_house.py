@@ -39,3 +39,20 @@ d12 = Actuator("1a66c3d6-22b2-446e-bf5c-eb5b9d1a8c79", "Smart Plug", "MysticEner
 d13 = Actuator("9e5b8274-4e77-4e4e-80d2-b40d648ea02a", "Dehumidifier", "ArcaneTech Solutions", "Hydra Dry 8000")
 d14 = Actuator("6b1c5f6b-37f6-4e3d-9145-1cfbe2f1fc28", "Light Bulp", "Elysian Tech", "Lumina Glow 4000")
 
+# Etasje 1
+DEMO_HOUSE.register_device(entrance, d1)
+DEMO_HOUSE.register_device(living, d2)
+DEMO_HOUSE.register_device(entrance, d3)
+DEMO_HOUSE.register_device(living, d4)
+DEMO_HOUSE.register_device(living, d5)
+DEMO_HOUSE.register_device(bath1, d6)
+DEMO_HOUSE.register_device(guest1, d7)
+DEMO_HOUSE.register_device(garage, d8)
+
+# Etasje 2
+DEMO_HOUSE.register_device(master, d9)
+DEMO_HOUSE.register_device(master, d10)
+DEMO_HOUSE.register_device(guest3, d11)
+DEMO_HOUSE.register_device(office, d12)
+DEMO_HOUSE.register_device(bath2, d13)
+DEMO_HOUSE.register_device(guest2, d14)
