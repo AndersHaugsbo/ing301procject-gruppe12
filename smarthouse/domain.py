@@ -16,12 +16,6 @@ class Floor:
         self.level = level
         self.rooms = []
     
-    def get_area(self):
-        total_area = 0
-        for room in self.rooms:
-            total_area += room.size
-        return total_area
-    
 class Room:
     def __init__(self, floor, size, name=None):
         self.floor = floor
@@ -38,10 +32,10 @@ class Device:
         self.room = None
     
     def is_sensor(self):
-        return False
+        pass
 
     def is_actuator(self):
-        return False
+        pass
     
     def get_device_type(self):
         return self.device_type
@@ -50,9 +44,13 @@ class Sensor(Device):
     def __init__(self, id, device_type, supplier, model_name):
         super().__init__(id, device_type, supplier, model_name)
         self.measurements = []
+        self.unit = ""
 
     def is_sensor(self):
         return True
+    
+    def is_actuator(self):
+        return False
     
     def get_measurements(self):
         return self.measurements
@@ -63,6 +61,11 @@ class Sensor(Device):
             random.uniform(10, 30),
             "°C"
         )
+    
+#    def last_measurement(self) -> Measurement:
+#        return Measurement(
+#            datetime.now().isoformat(), 
+#            random() * 10, self.unit)
 
 class Actuator(Device):
     def __init__(self, id, device_type, supplier, model_name):
@@ -72,6 +75,9 @@ class Actuator(Device):
     
     def is_actuator(self):
         return True
+    
+    def is_sensor(self):
+        return False
     
     def turn_on(self, value=None):
         self.is_on = True
