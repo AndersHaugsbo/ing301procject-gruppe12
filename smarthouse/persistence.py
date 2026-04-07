@@ -1,6 +1,6 @@
 import sqlite3
-from pathlib import Path
 from typing import Optional
+from collections import defaultdict
 from smarthouse.domain import Measurement, SmartHouse, Sensor, Actuator
 
 class SmartHouseRepository:
@@ -41,7 +41,7 @@ class SmartHouseRepository:
         smarthouse = SmartHouse()
         cursor = self.cursor()
 
-        # gets rooms
+        #gets rooms
         cursor.execute("""SELECT id, floor, area, name 
                         FROM rooms""")
         rooms_data = cursor.fetchall()
@@ -70,7 +70,7 @@ class SmartHouseRepository:
             value = row[2]
             actuator_states[device_id] = (is_on, value)
 
-        # gets devices
+        #gets devices
         cursor.execute("""SELECT id, room, kind, category, supplier, product 
                         FROM devices""")
         devices_data = cursor.fetchall()
@@ -89,7 +89,7 @@ class SmartHouseRepository:
                     device.is_on = bool(is_on)
                     device.value = value
 
-            # find device room
+            #find device room
             if room_id in rooms:
                 smarthouse.register_device(rooms[room_id], device)
 
@@ -107,7 +107,7 @@ class SmartHouseRepository:
         
         cursor = self.cursor()
         
-        # gets last measurement from sensor
+        #gets last measurement from sensor
         cursor.execute("""SELECT ts, value, unit 
                           FROM measurements 
                           WHERE device = ? 
@@ -204,8 +204,53 @@ class SmartHouseRepository:
         the average recorded humidity in that room at that particular time.
         The result is a (possibly empty) list of number representing hours [0-23].
         """
-        # TODO: implement
-        return NotImplemented
+        cursor = self.cursor()
+
+        device_ids = []
+        for device in room.devices:
+            device_ids.append(device.id)
+
+        if not device_ids:
+            return []
+
+        #get humidity
+        query = """SELECT strftime('%H', ts), value
+                FROM measurements
+                WHERE device IN ({})
+                AND unit = '%'
+                AND DATE(ts) = ?""".format(",".join(["?"] * len(device_ids)))
+
+        params = device_ids + [date]
+        cursor.execute(query, params)
+        results = cursor.fetchall()
+        cursor.close()
+
+        if not results:
+            return []
+
+        #group by hour
+        hourly = defaultdict(list)
+        all_values = []
+
+        for hour_str, value in results:
+            hour = int(hour_str)
+            hourly[hour].append(value)
+            all_values.append(value)
+
+        #daily average
+        daily_avg = sum(all_values) / len(all_values)
+
+        #hours with > 3 values above average
+        result = []
+        for hour, values in hourly.items():
+            count = 0
+            for v in values:
+                if v > daily_avg:
+                    count += 1
+            if count > 3:
+                result.append(hour)
+
+        return sorted(result)
 
 #---------------------------------------------------------------------------
 if __name__ == "__main__":
