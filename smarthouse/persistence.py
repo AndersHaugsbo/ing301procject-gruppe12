@@ -172,16 +172,16 @@ class SmartHouseRepository:
         query = """SELECT DATE(ts), AVG(value)
                     FROM measurements
                     WHERE device IN ({})
-                    AND unit = '°C'""".format(",".join(["?"] * len(device_ids)))
+                    AND unit LIKE '%C%'""".format(",".join(["?"] * len(device_ids)))
 
         params = list(device_ids)
 
         if from_date:
-            query += " AND ts >= ?"
+            query += " AND DATE(ts) >= ?"
             params.append(from_date)
 
         if until_date:
-            query += " AND ts <= ?"
+            query += " AND DATE(ts) <= ?"
             params.append(until_date)
 
         query += " GROUP BY DATE(ts)"
