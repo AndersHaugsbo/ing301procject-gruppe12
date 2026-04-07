@@ -42,7 +42,8 @@ class SmartHouseRepository:
         cursor = self.cursor()
 
         # gets rooms
-        cursor.execute("SELECT id, floor, area, name FROM rooms")
+        cursor.execute("""SELECT id, floor, area, name 
+                        FROM rooms""")
         rooms_data = cursor.fetchall()
 
         floors = {}
@@ -60,20 +61,35 @@ class SmartHouseRepository:
             room_obj = smarthouse.register_room(floor_obj, area, name)
             rooms[room_id] = room_obj
 
+        #load actuator states
+        cursor.execute("""SELECT device_id, is_on, value FROM actuator_states""")
+        actuator_states = {}
+        for row in cursor.fetchall():
+            device_id = row[0]
+            is_on = row[1]
+            value = row[2]
+            actuator_states[device_id] = (is_on, value)
+
         # gets devices
-        cursor.execute("SELECT id, room, kind, category, supplier, product FROM devices")
+        cursor.execute("""SELECT id, room, kind, category, supplier, product 
+                        FROM devices""")
         devices_data = cursor.fetchall()
 
         #goes through all the devices from db
         for dev_id, room_id, kind, category, supplier, product in devices_data:
-
-            #device og acutator
-            if kind.lower() == "sensor":
+            
+            #device and actuator
+            if category.strip().lower() == "sensor":
                 device = Sensor(dev_id, category, supplier, product)
             else:
                 device = Actuator(dev_id, category, supplier, product)
 
-            # find devise room
+                if dev_id in actuator_states:
+                    is_on, value = actuator_states[dev_id]
+                    device.is_on = bool(is_on)
+                    device.value = value
+
+            # find device room
             if room_id in rooms:
                 smarthouse.register_device(rooms[room_id], device)
 
@@ -92,7 +108,11 @@ class SmartHouseRepository:
         cursor = self.cursor()
         
         # gets last measurement from sensor
-        cursor.execute("SELECT ts, value, unit FROM measurements WHERE device = ? ORDER BY ts DESC LIMIT 1", (sensor.id,))
+        cursor.execute("""SELECT ts, value, unit 
+                          FROM measurements 
+                          WHERE device = ? 
+                          ORDER BY ts DESC 
+                          LIMIT 1""", (sensor.id,))
         
         result = cursor.fetchone()
         cursor.close()
@@ -110,11 +130,21 @@ class SmartHouseRepository:
         """
         Saves the state of the given actuator in the database. 
         """
-        # TODO: Implement this method. You will probably need to extend the existing database structure: e.g.
-        #       by creating a new table (`CREATE`), adding some data to it (`INSERT`) first, and then issue
-        #       and SQL `UPDATE` statement. Remember also that you will have to call `commit()` on the `Connection`
-        #       stored in the `self.conn` instance variable.
-        pass
+      
+        cursor = self.cursor()
+
+        cursor.execute("""CREATE TABLE IF NOT EXISTS actuator_states (
+                        device_id TEXT PRIMARY KEY,
+                        is_on INTEGER,
+                        value REAL)""")
+
+        cursor.execute("""INSERT INTO actuator_states (device_id, is_on, value) 
+                          VALUES (?, ?, ?)
+                          ON CONFLICT(device_id) DO UPDATE SET is_on = excluded.is_on, value = excluded.value""", 
+                          (actuator.id, actuator.is_active(), actuator.value))
+        
+        self.conn.commit()
+        cursor.close()
 
 
     # statistics
@@ -130,9 +160,41 @@ class SmartHouseRepository:
         The result should be a dictionary where the keys are strings representing dates (iso format) and 
         the values are floating point numbers containing the average temperature that day.
         """
-        # TODO: This and the following statistic method are a bit more challenging. Try to design the respective 
-        #       SQL statements first in a SQL editor like Dbeaver and then copy it over here.  
-        return NotImplemented
+        cursor = self.cursor()
+
+        device_ids = []
+        for device in room.devices:
+            device_ids.append(device.id)
+
+        if not device_ids:
+            return {}
+
+        query = """SELECT DATE(ts), AVG(value)
+                    FROM measurements
+                    WHERE device IN ({})
+                    AND unit = '°C'""".format(",".join(["?"] * len(device_ids)))
+
+        params = list(device_ids)
+
+        if from_date:
+            query += " AND ts >= ?"
+            params.append(from_date)
+
+        if until_date:
+            query += " AND ts <= ?"
+            params.append(until_date)
+
+        query += " GROUP BY DATE(ts)"
+
+        cursor.execute(query, params)
+        results = cursor.fetchall()
+        cursor.close()
+
+        avg_temps = {}
+        for date, avg in results:
+            avg_temps[date] = avg
+
+        return avg_temps
 
     
     def calc_hours_with_humidity_above(self, room, date: str) -> list:
@@ -145,7 +207,7 @@ class SmartHouseRepository:
         # TODO: implement
         return NotImplemented
 
-
+#---------------------------------------------------------------------------
 if __name__ == "__main__":
     
     repo = SmartHouseRepository("../data/db.sql")
@@ -163,3 +225,61 @@ if __name__ == "__main__":
     print("  ID:", device.id)
     print("  Type:", device.get_device_type())
     print("  Rom:", device.room.room_name if device.room else None)
+    print("\n--- Testing get_latest_reading() ---")
+
+    house = repo.load_smarthouse_deep()
+
+    sensor = None
+    for device in house.get_devices():
+        if device.is_sensor():
+            sensor = device
+            break
+
+    if sensor:
+        reading = repo.get_latest_reading(sensor)
+
+        print("Sensor ID:", sensor.id)
+        if reading:
+            print("Timestamp:", reading.timestamp)
+            print("Value:", reading.value)
+            print("Unit:", reading.unit)
+        else:
+            print("No reading found")
+    else:
+        print("No sensor found")
+
+    
+    print("\n--- Testing update_actuator_state() ---")
+
+    actuator = None
+    for device in house.get_devices():
+        if device.is_actuator():
+            actuator = device
+            break
+
+    if actuator:
+        print("Actuator ID:", actuator.id)
+
+        actuator.turn_on(22.5)
+        repo.update_actuator_state(actuator)
+        print("Turned ON with value:", actuator.value)
+
+        actuator.turn_off()
+        repo.update_actuator_state(actuator)
+        print("Turned OFF")
+
+        cursor = repo.cursor()
+        cursor.execute("SELECT * FROM actuator_states WHERE device_id = ?", (actuator.id,))
+        result = cursor.fetchone()
+        cursor.close()
+
+        print("Stored in DB:", result)
+    else:
+        print("No actuator found")
+
+    print("\n--- Testing avg temp ---")
+
+    room = house.get_rooms()[0]
+    result = repo.calc_avg_temperatures_in_room(room)
+
+    print(result)
