@@ -251,6 +251,7 @@ class SmartHouseRepository:
                 result.append(hour)
 
         return sorted(result)
+            #alc_hours_with_humidity_above() solution source == chatgpt ^
 
 #---------------------------------------------------------------------------
 if __name__ == "__main__":
