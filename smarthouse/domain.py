@@ -41,10 +41,10 @@ class Device:
         return self.device_type
     
 class Sensor(Device):
-    def __init__(self, id, device_type, supplier, model_name):
+    def __init__(self, id, device_type, supplier, model_name, unit: str = ""):
         super().__init__(id, device_type, supplier, model_name)
         self.measurements = []
-        self.unit = ""
+        self.unit = unit
 
     def is_sensor(self):
         return True
@@ -55,17 +55,17 @@ class Sensor(Device):
     def get_measurements(self):
         return self.measurements
     
-    def last_measurement(self):
+    def last_measurement(self) -> Measurement:
         return Measurement(
-            datetime.now().isoformat(),
-            random.uniform(10, 30),
-            "°C"
-        )
+            datetime.now().isoformat(), 
+            random.uniform(10, 30), self.unit)
     
-#    def last_measurement(self) -> Measurement:
+#    def last_measurement(self):
 #        return Measurement(
-#            datetime.now().isoformat(), 
-#            random() * 10, self.unit)
+#            datetime.now().isoformat(),
+#            random.uniform(10, 30),
+#            "°C"
+#        )
 
 class Actuator(Device):
     def __init__(self, id, device_type, supplier, model_name):
