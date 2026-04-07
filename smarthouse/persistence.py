@@ -1,6 +1,7 @@
 import sqlite3
+from pathlib import Path
 from typing import Optional
-from smarthouse.domain import Measurement
+from smarthouse.domain import Measurement, SmartHouse, Sensor, Actuator
 
 class SmartHouseRepository:
     """
@@ -28,6 +29,7 @@ class SmartHouseRepository:
         self.conn.close()
         self.conn = sqlite3.connect(self.file)
 
+    #---------------------------------------------------------------------------------
     
     def load_smarthouse_deep(self):
         """
@@ -36,9 +38,47 @@ class SmartHouseRepository:
         all referenced objects within the object structure (e.g. floors, rooms, devices) 
         are retrieved as well. 
         """
-        # TODO: START here! remove the following stub implementation and implement this function 
-        #       by retrieving the data from the database via SQL `SELECT` statements.
-        return NotImplemented
+        smarthouse = SmartHouse()
+        cursor = self.cursor()
+
+        # gets rooms
+        cursor.execute("SELECT id, floor, area, name FROM rooms")
+        rooms_data = cursor.fetchall()
+
+        floors = {}
+        rooms = {}
+
+        #goes through all the rooms from db
+        for room_id, floor_level, area, name in rooms_data:
+            #creates floor
+            if floor_level not in floors:
+                floors[floor_level] = smarthouse.register_floor(floor_level)
+
+            floor_obj = floors[floor_level]
+
+            #creates room and add to floor
+            room_obj = smarthouse.register_room(floor_obj, area, name)
+            rooms[room_id] = room_obj
+
+        # gets devices
+        cursor.execute("SELECT id, room, kind, category, supplier, product FROM devices")
+        devices_data = cursor.fetchall()
+
+        #goes through all the devices from db
+        for dev_id, room_id, kind, category, supplier, product in devices_data:
+
+            #device og acutator
+            if kind.lower() == "sensor":
+                device = Sensor(dev_id, category, supplier, product)
+            else:
+                device = Actuator(dev_id, category, supplier, product)
+
+            # find devise room
+            if room_id in rooms:
+                smarthouse.register_device(rooms[room_id], device)
+
+        cursor.close()
+        return smarthouse
 
 
     def get_latest_reading(self, sensor) -> Optional[Measurement]:
@@ -89,3 +129,21 @@ class SmartHouseRepository:
         # TODO: implement
         return NotImplemented
 
+
+if __name__ == "__main__":
+    
+    repo = SmartHouseRepository("../data/db.sql")
+
+    house = repo.load_smarthouse_deep()
+
+    print("Antall rom:", len(house.get_rooms()))
+
+    print("Totalt areal:", house.get_area())
+
+    print("Antall devices:", len(house.get_devices()))
+
+    device = house.get_devices()[0]
+    print("Eksempel device:")
+    print("  ID:", device.id)
+    print("  Type:", device.get_device_type())
+    print("  Rom:", device.room.room_name if device.room else None)
