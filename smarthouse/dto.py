@@ -1,3 +1,4 @@
+#!python3.14.4
 from __future__ import annotations
 from typing import Literal
 

@@ -1,3 +1,4 @@
+#!python3.14.4
 from smarthouse.domain import SmartHouse, Sensor, Actuator
 
 DEMO_HOUSE = SmartHouse()

@@ -1,3 +1,4 @@
+#!python3.14.4
 import random
 from datetime import datetime
 

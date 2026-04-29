@@ -1,3 +1,4 @@
+#!python3.14.4
 import uvicorn
 
 from fastapi import FastAPI, Response

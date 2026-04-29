@@ -1,3 +1,4 @@
+#!python3.14.4
 import sqlite3
 from typing import Optional
 from collections import defaultdict
