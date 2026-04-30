@@ -90,6 +90,18 @@ class Actuator(Device):
 
     def is_active(self):
         return self.is_on
+    
+#cant start web host without
+class ActuatorWithSensor(Actuator, Sensor):
+
+    def __init__(self, id: str, model_name: str, supplier: str, device_type: str):
+        super().__init__(id, model_name, supplier, device_type)
+
+    def is_actuator(self) -> bool:
+        return True
+
+    def is_sensor(self) -> bool:
+        return True
 
 class SmartHouse:
     """
